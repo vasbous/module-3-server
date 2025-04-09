@@ -80,7 +80,7 @@ router.patch("/update/:property/:userId", async (req, res, next) => {
         next(error);
       }
       break;
-    case "name":
+    case "username":
     case "goals":
     case "progression":
     case "level":

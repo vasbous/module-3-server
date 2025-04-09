@@ -7,7 +7,7 @@ const oneChatHistorySchema = new Schema({
 
 const userSchema = new Schema(
   {
-    name: {
+    username: {
       type: String,
       required: true,
       minlength: 3,
