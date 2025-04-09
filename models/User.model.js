@@ -52,7 +52,7 @@ const userSchema = new Schema(
     timezone: String,
     feedbacks: {
       type: [Schema.Types.ObjectId],
-      ref: "Weekly_feedbak",
+      ref: "Weekly_feedback",
     },
     day_streak: Number,
     previous_connexion: Date,

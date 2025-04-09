@@ -1,6 +1,6 @@
 const { Schema, model } = require("mongoose");
 const weeklyFeedbackSchema = new Schema({
-  ia_response: {
+  ai_response: {
     type: String,
     required: true,
   },
@@ -9,5 +9,5 @@ const weeklyFeedbackSchema = new Schema({
     required: true,
   },
 });
-const Weekly_feedback = model("Weekly_feedback", WeeklyFeedbackSchema);
+const Weekly_feedback = model("Weekly_feedback", weeklyFeedbackSchema);
 module.exports = Weekly_feedback;

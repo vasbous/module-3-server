@@ -3,6 +3,7 @@ const { Schema, model } = require("mongoose");
 const goalSchema = new Schema({
   name: {
     type: String,
+    enum: ["Fitness", "Wellbeing", "Weight Loss", "Less Stress"],
     required: true,
   },
   questions: {

@@ -14,7 +14,7 @@ router.get("/", async (req, res, next) => {
 router.get("/:taskId", async (req, res, next) => {
   const { taskId } = req.params;
   try {
-    const task = await Task.findOneById(params.taskId);
+    const task = await Task.findById(taskId);
     res.status(200).json(task);
   } catch (err) {
     next(err);

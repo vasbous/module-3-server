@@ -9,7 +9,9 @@ const tasksPlanSchema = new Schema({
     type: Boolean,
     default: false,
   },
+  // required after pliz
   date: Date,
+  // required after pliz
   time: Number,
 });
 
