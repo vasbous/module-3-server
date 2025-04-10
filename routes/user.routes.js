@@ -6,12 +6,16 @@ const bcryptjs = require("bcryptjs");
 
 router.get("/:userId", async (req, res) => {
   try {
-    const currentUser = await User.findById(req.params.userId).populate([
-      "diary_entry",
-      "goals",
-      "feedbacks",
-      "plan",
-    ]);
+    const currentUser = await User.findById(req.params.userId).populate({
+      path: "diary_entry",
+      path: "goals",
+      path: "feedbacks",
+      path: "plan",
+      populate: {
+        path: "tasks.task",
+        model: "Task",
+      },
+    });
     const userCopy = currentUser;
     userCopy.password = null;
 

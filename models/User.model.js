@@ -48,6 +48,7 @@ const userSchema = new Schema(
     plan: {
       type: Schema.Types.ObjectId,
       ref: "Plan",
+      default: null
     },
     timezone: String,
     feedbacks: {
