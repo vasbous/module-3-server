@@ -6,16 +6,19 @@ const diarySchema = new Schema(
       type: String,
       required: true,
     },
-    ai_response: String,
+    ai_response: {
+      type: String,
+    },
     mood_score: {
       type: Number,
-      min: 1,
-      max: 10,
+    },
+    user: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
       required: true,
     },
   },
   {
-    // this second object adds extra properties: `createdAt` and `updatedAt`
     timestamps: true,
   }
 );
