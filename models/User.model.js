@@ -41,14 +41,15 @@ const userSchema = new Schema(
       // required: true,
     },
 
-    diary_entry: {
+    // Updated: renamed from diary_entry to diaries for clarity
+    diaries: {
       type: [Schema.Types.ObjectId],
       ref: "Diary",
     },
     plan: {
       type: Schema.Types.ObjectId,
       ref: "Plan",
-      default: null
+      default: null,
     },
     timezone: String,
     feedbacks: {

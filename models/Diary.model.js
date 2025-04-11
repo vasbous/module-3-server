@@ -11,14 +11,13 @@ const diarySchema = new Schema(
     },
     mood_score: {
       type: Number,
-    },
-    user: {
-      type: Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
+      min: 1,
+      max: 10,
+      default: 5,
     },
   },
   {
+    // this second object adds extra properties: `createdAt` and `updatedAt`
     timestamps: true,
   }
 );

@@ -6,16 +6,18 @@ const bcryptjs = require("bcryptjs");
 
 router.get("/:userId", async (req, res) => {
   try {
-    const currentUser = await User.findById(req.params.userId).populate({
-      path: "diary_entry",
-      path: "goals",
-      path: "feedbacks",
-      path: "plan",
-      populate: {
-        path: "tasks.task",
-        model: "Task",
+    const currentUser = await User.findById(req.params.userId).populate([
+      { path: "diaries" },
+      { path: "goals" },
+      { path: "feedbacks" },
+      {
+        path: "plan",
+        populate: {
+          path: "tasks.task",
+          model: "Task",
+        },
       },
-    });
+    ]);
     const userCopy = currentUser;
     userCopy.password = null;
 
@@ -88,7 +90,7 @@ router.patch("/update/:property/:userId", async (req, res, next) => {
     case "goals":
     case "progression":
     case "level":
-    case "diary_entry":
+    case "diaries":
     case "plan":
     case "feedbacks":
     case "day_streak":
@@ -122,6 +124,33 @@ router.delete("/:userId", (req, res) => {
     .catch((error) => {
       res.status(500).json({ message: "Error while deleting the user" });
     });
+});
+
+// Specific route to add a diary entry to user
+router.patch("/:userId/diaries", async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { diaryId } = req.body;
+
+    if (!diaryId) {
+      return res.status(400).json({ message: "diaryId is required" });
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { $push: { diaries: diaryId } },
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json({ message: "Diary added to user successfully" });
+  } catch (error) {
+    console.error("Error adding diary to user:", error);
+    res.status(500).json({ message: "Error updating user with diary entry" });
+  }
 });
 
 module.exports = router;
