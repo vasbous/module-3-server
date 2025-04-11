@@ -13,13 +13,6 @@ router.get("/today", isAuthenticated, async (req, res) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // Get tomorrow (for date range query)
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    console.log("Searching for diaries for user:", userId);
-    console.log("Date range:", today, "to", tomorrow);
-
     // Find the user first
     const user = await User.findById(userId);
     if (!user) {
@@ -35,7 +28,7 @@ router.get("/today", isAuthenticated, async (req, res) => {
     // Now search for diaries created today
     const todayDiary = await Diary.find({
       _id: { $in: user.diaries },
-      createdAt: { $gte: today, $lt: tomorrow },
+      createdAt: { $gte: today },
     })
       .sort({ createdAt: -1 })
       .limit(1);
