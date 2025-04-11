@@ -63,7 +63,8 @@ router.get("/tasks/:planId", isAuthenticated, async (req,res)=>{
               updatedAt: "$taskDetails.updatedAt"
             }
           }
-        }
+        },
+        { $sort: { time: 1 } },
       ]);
   
       if (result.length > 0) {
