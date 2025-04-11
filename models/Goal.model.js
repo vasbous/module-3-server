@@ -1,19 +1,21 @@
 const { Schema, model } = require("mongoose");
 
+const questionSchema = new Schema({
+  title: String,
+  question: String,
+  type: String,
+  answer_choices: Array,
+});
+
 const goalSchema = new Schema({
   name: {
     type: String,
     enum: ["Fitness", "Wellbeing", "Weight Loss", "Less Stress"],
-    required: true,
+    // required: true,
   },
   questions: {
-    type: [String],
-    required: true,
-  },
-  goal_details: {
-    type: Map,
-    of: Schema.Types.Mixed,
-    required: true,
+    type: [questionSchema],
+    // required: true,
   },
 });
 

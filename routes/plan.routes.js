@@ -1,85 +1,85 @@
 const router = require("express").Router();
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 const Plan = require("../models/Plan.model");
 const { isAuthenticated } = require("../middlewares/jwt.middleware");
 
 // tasks currentDate
-router.get("/tasks/:planId", isAuthenticated, async (req,res)=>{
-    try {
-      const planId = req.params.planId; // Récupérer l'ID du plan
+router.get("/tasks/:planId", isAuthenticated, async (req, res) => {
+  try {
+    const planId = req.params.planId;
 
-      const startOfToday = new Date();
-      startOfToday.setHours(0, 0, 0, 0);
-  
-      const endOfToday = new Date();
-      endOfToday.setHours(23, 59, 59, 999);
-  
-      const result = await Plan.aggregate([
-        {
-          $match: {
-            _id: new mongoose.Types.ObjectId(planId),
-          },
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const endOfToday = new Date();
+    endOfToday.setHours(23, 59, 59, 999);
+
+    const result = await Plan.aggregate([
+      {
+        $match: {
+          _id: new mongoose.Types.ObjectId(planId),
         },
-        {
-          $project: {
-            tasks: {
-              $filter: {
-                input: "$tasks",
-                as: "task",
-                cond: {
-                  $and: [
-                    { $gte: ["$$task.date", startOfToday] },
-                    { $lte: ["$$task.date", endOfToday] },
-                  ],
-                },
+      },
+      {
+        $project: {
+          tasks: {
+            $filter: {
+              input: "$tasks",
+              as: "task",
+              cond: {
+                $and: [
+                  { $gte: ["$$task.date", startOfToday] },
+                  { $lte: ["$$task.date", endOfToday] },
+                ],
               },
             },
           },
         },
-        { $unwind: "$tasks" },
-        {
-          $lookup: {
-            from: "tasks", // nom de la collection MongoDB (généralement le modèle en minuscule + 's')
-            localField: "tasks.task", // champ dans Plan
-            foreignField: "_id",      // champ dans Task
-            as: "taskDetails"
-          }
+      },
+      { $unwind: "$tasks" },
+      {
+        $lookup: {
+          from: "tasks", //collectionne name
+          localField: "tasks.task", // name ref inside this collection
+          foreignField: "_id", // relative to this property inside TaskModel
+          as: "taskDetails", //alias
         },
-        { $unwind: "$taskDetails" },
-        {
-          $project: {
-            _id: 0,
-            date: "$tasks.date",
-            time: "$tasks.time",
-            done: "$tasks.done",
-            task: {
-              _id: "$taskDetails._id",
-              content: "$taskDetails.content",
-              category: "$taskDetails.category",
-              difficulty_level: "$taskDetails.difficulty_level",
-              duration: "$taskDetails.duration",
-              plan_task: "$taskDetails.plan_task",
-              createdAt: "$taskDetails.createdAt",
-              updatedAt: "$taskDetails.updatedAt"
-            }
-          }
+      },
+      { $unwind: "$taskDetails" },
+      {
+        $project: {
+          _id: 0,
+          date: "$tasks.date",
+          time: "$tasks.time",
+          done: "$tasks.done",
+          task: {
+            _id: "$taskDetails._id",
+            content: "$taskDetails.content",
+            category: "$taskDetails.category",
+            difficulty_level: "$taskDetails.difficulty_level",
+            duration: "$taskDetails.duration",
+            plan_task: "$taskDetails.plan_task",
+            createdAt: "$taskDetails.createdAt",
+            updatedAt: "$taskDetails.updatedAt",
+          },
         },
-        { $sort: { time: 1 } },
-      ]);
-  
-      if (result.length > 0) {
-        res.status(200).json(result);
-      } else {
-        res.status(200).json([]);
-      }
-    } catch (error) {
-      console.error("Erreur dans la route /tasks/:planId");
-      res.status(500).json({
-        error: "Erreur lors de la récupération des tâches du jour",
-        message: error.message,
-      });
+      },
+      { $sort: { time: 1 } },
+    ]);
+
+    if (result.length > 0) {
+      res.status(200).json(result);
+    } else {
+      res.status(200).json([]);
     }
-  });
+  } catch (error) {
+    console.error("Erreur dans la route /tasks/:planId");
+    res.status(500).json({
+      error: "Erreur lors de la récupération des tâches du jour",
+      message: error.message,
+    });
+  }
+});
 
 router.post("/", (req, res) => {
   Plan.create(req.body)

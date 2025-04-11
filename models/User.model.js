@@ -25,7 +25,7 @@ const userSchema = new Schema(
       // minlength: 8,
     },
     goals: {
-      type: [Schema.Types.ObjectId],
+      type: Schema.Types.ObjectId,
       ref: "Goal",
     },
     level: {
@@ -66,6 +66,11 @@ const userSchema = new Schema(
     google_connexion: {
       type: Boolean,
       default: false,
+    },
+    goal_details: {
+      type: Map,
+      of: Schema.Types.Mixed,
+      // required: true,
     },
   },
   {

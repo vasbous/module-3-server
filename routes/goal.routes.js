@@ -3,11 +3,7 @@ const router = require("express").Router();
 const Goal = require("../models/Goal.model");
 
 router.post("/", (req, res) => {
-  Goal.create({
-    name: req.body.name,
-    questions: req.body.questions,
-    goal_details: req.body.goal_details,
-  })
+  Goal.create(req.body)
 
     .then((createdGoal) => {
       res.status(201).json(createdGoal);
