@@ -2,6 +2,16 @@ const router = require("express").Router();
 
 const Goal = require("../models/Goal.model");
 
+router.get("/", (req, res) => {
+  Goal.find()
+    .then((goals) => {
+      res.status(200).json(goals);
+    })
+    .catch((error) => {
+      res.status(500).json({ error: "Error fetching goals" });
+    });
+});
+
 router.post("/", (req, res) => {
   Goal.create(req.body)
 

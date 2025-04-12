@@ -10,7 +10,14 @@ const questionSchema = new Schema({
 const goalSchema = new Schema({
   name: {
     type: String,
-    enum: ["Fitness", "Wellbeing", "Weight Loss", "Less Stress"],
+    enum: [
+      "Lose weight",
+      "Get fitter",
+      "Less stress",
+      "Get happier",
+      "Stop procrastinating",
+      "Be more productive",
+    ],
     // required: true,
   },
   questions: {
