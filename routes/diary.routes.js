@@ -49,6 +49,40 @@ router.get("/today", isAuthenticated, async (req, res) => {
   }
 });
 
+// Get recent diary entries (for AI analysis)
+router.get("/user/recent", isAuthenticated, async (req, res) => {
+  try {
+    // Get user ID from auth token
+    const userId = req.payload._id;
+
+    // Find the user first
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // If user has no diaries, return empty array
+    if (!user.diaries || user.diaries.length === 0) {
+      return res.status(200).json([]);
+    }
+
+    // Get the 7 most recent diary entries
+    const recentDiaries = await Diary.find({
+      _id: { $in: user.diaries },
+    })
+      .sort({ createdAt: -1 })
+      .limit(7);
+
+    res.status(200).json(recentDiaries);
+  } catch (error) {
+    console.error("Error fetching recent diaries:", error);
+    res.status(500).json({
+      error: "Error fetching recent diary entries",
+      details: error.message,
+    });
+  }
+});
+
 // Get a single diary entry
 router.get("/:diaryId", isAuthenticated, (req, res) => {
   Diary.findById(req.params.diaryId)
