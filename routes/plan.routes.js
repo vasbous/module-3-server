@@ -7,11 +7,14 @@ const { isAuthenticated } = require("../middlewares/jwt.middleware");
 router.get("/tasks/:planId", isAuthenticated, async (req, res) => {
   try {
     const planId = req.params.planId;
+    const dateString = req.query.date; // Récupère la date de la requête
 
-    const startOfToday = new Date();
+    // Si aucune date n'est fournie, utilise la date d'aujourd'hui
+    const dateToSearch = dateString ? new Date(dateString) : new Date();
+    const startOfToday = new Date(dateToSearch);
     startOfToday.setHours(0, 0, 0, 0);
 
-    const endOfToday = new Date();
+    const endOfToday = new Date(dateToSearch);
     endOfToday.setHours(23, 59, 59, 999);
 
     const result = await Plan.aggregate([
@@ -50,21 +53,21 @@ router.get("/tasks/:planId", isAuthenticated, async (req, res) => {
         $project: {
           _id: 0,
           date: "$tasks.date",
-          time: "$tasks.time",
+          endDate: "$tasks.endDate",
           done: "$tasks.done",
           task: {
             _id: "$taskDetails._id",
             content: "$taskDetails.content",
             category: "$taskDetails.category",
             difficulty_level: "$taskDetails.difficulty_level",
-            duration: "$taskDetails.duration",
+            // duration: "$taskDetails.duration",
             plan_task: "$taskDetails.plan_task",
             createdAt: "$taskDetails.createdAt",
             updatedAt: "$taskDetails.updatedAt",
           },
         },
       },
-      { $sort: { time: 1 } },
+      { $sort: { date: 1 } },
     ]);
 
     if (result.length > 0) {

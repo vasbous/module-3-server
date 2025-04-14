@@ -11,8 +11,8 @@ const tasksPlanSchema = new Schema({
   },
   // required after pliz
   date: Date,
+  endDate: Date,
   // required after pliz
-  time: Number,
 });
 
 const planSchema = new Schema({
