@@ -10,7 +10,7 @@ const tasksPlanSchema = new Schema({
     default: false,
   },
   // required after pliz
-  date: Date,
+  startDate: Date,
   endDate: Date,
   // required after pliz
 });

@@ -31,8 +31,8 @@ router.get("/tasks/:planId", isAuthenticated, async (req, res) => {
               as: "task",
               cond: {
                 $and: [
-                  { $gte: ["$$task.date", startOfToday] },
-                  { $lte: ["$$task.date", endOfToday] },
+                  { $gte: ["$$task.startDate", startOfToday] },
+                  { $lte: ["$$task.startDate", endOfToday] },
                 ],
               },
             },
@@ -52,7 +52,7 @@ router.get("/tasks/:planId", isAuthenticated, async (req, res) => {
       {
         $project: {
           _id: 0,
-          date: "$tasks.date",
+          startDate: "$tasks.startDate",
           endDate: "$tasks.endDate",
           done: "$tasks.done",
           task: {
@@ -67,7 +67,7 @@ router.get("/tasks/:planId", isAuthenticated, async (req, res) => {
           },
         },
       },
-      { $sort: { date: 1 } },
+      { $sort: { startDate: 1 } },
     ]);
 
     if (result.length > 0) {

@@ -10,7 +10,17 @@ router.get("/", async (req, res, next) => {
     next(err);
   }
 });
-
+router.get("/category/:categoryType", async (req, res, next) => {
+  try {
+    const { categoryType } = req.params;
+    const tasks = await Task.find({
+      category: categoryType.split("%20").join(" "),
+    });
+    res.status(200).json(tasks);
+  } catch (err) {
+    next(err);
+  }
+});
 router.get("/:taskId", async (req, res, next) => {
   const { taskId } = req.params;
   try {
