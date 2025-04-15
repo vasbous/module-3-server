@@ -1,6 +1,7 @@
 const router = require("express").Router();
 const mongoose = require("mongoose");
 const Plan = require("../models/Plan.model");
+const Task = require("../models/Task.model");
 const { isAuthenticated } = require("../middlewares/jwt.middleware");
 
 // tasks currentDate
@@ -59,8 +60,8 @@ router.get("/tasks/:planId", isAuthenticated, async (req, res) => {
             _id: "$taskDetails._id",
             content: "$taskDetails.content",
             category: "$taskDetails.category",
-            difficulty_level: "$taskDetails.difficulty_level",
-            // duration: "$taskDetails.duration",
+            description: "$taskDetails.description",
+            duration: "$taskDetails.duration",
             plan_task: "$taskDetails.plan_task",
             createdAt: "$taskDetails.createdAt",
             updatedAt: "$taskDetails.updatedAt",
@@ -112,6 +113,69 @@ router.delete("/:planId", (req, res) => {
     .catch((error) => {
       res.status(500).json({ message: "Error while deleting a plan" });
     });
+});
+
+router.put("/:planId/replace-task", async (req, res, next) => {
+  const { planId } = req.params;
+  const { oldTaskId , category, startDate } = req.body.data;
+  console.log(oldTaskId)
+  try {
+    // find plan
+    const plan = await Plan.findById(planId);
+    // no plan = error
+    if (!plan) {
+      return res.status(404).json({ message: "Plan not found" });
+    }
+
+       // find index of oldTask inside the plan using startDate
+       const taskIndex = plan.tasks.findIndex(t => {
+        // Compare dates as strings in ISO format for reliable comparison
+        return new Date(t.startDate).toISOString() === new Date(startDate).toISOString();
+      });
+  
+      console.log("Found task index:", taskIndex);
+
+    // not inside the plan = error
+    if (taskIndex === -1) {
+      return res.status(404).json({ message: "Old task not found in plan" });
+    }
+
+    // find oldTask inside bdd
+    const oldTask = await Task.findById(oldTaskId);
+    if (!oldTask) {
+      return res.status(404).json({ message: "Old task not found in DB" });
+    }
+
+
+    // find all other task with the same category
+    const possibleTasks = await Task.find({
+      category,
+      _id: { $ne: oldTaskId }, // Exclut l’ancienne tâche
+    });
+
+    // if no task find error
+    if (possibleTasks.length === 0) {
+      return res.status(404).json({ message: "No other tasks available in this category" });
+    }
+
+    // create random index
+    const randomIndex = Math.floor(Math.random() * possibleTasks.length);
+    // chose a new task
+    const newTask = possibleTasks[randomIndex];
+
+    // Replace the task
+    plan.tasks[taskIndex].task = newTask._id;
+    // ! need to fix duration change
+    // reset status
+    plan.tasks[taskIndex].done = false; 
+
+    // save new plan
+    await plan.save();
+
+    res.status(200).json({ message: "Task replaced", newTask, plan });
+  } catch (err) {
+    next(err);
+  }
 });
 
 module.exports = router;
