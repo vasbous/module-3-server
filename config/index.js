@@ -24,11 +24,7 @@ module.exports = (app) => {
   // controls a very specific header to pass headers from the frontend
   app.use(
     cors({
-      origin: [
-        FRONTEND_URL,
-        "https://module-3-client.vercel.app", // Explicitly add your deployed frontend URL
-      ],
-      credentials: true, // Add this if you're using authentication/cookies
+      origin: FRONTEND_URL,
     })
   );
 
