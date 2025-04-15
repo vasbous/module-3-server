@@ -45,6 +45,9 @@ app.use("/user", userRoutes);
 const weeklyFeedbackRoutes = require("./routes/weeklyFeedback.routes");
 app.use("/weekly-feedback", weeklyFeedbackRoutes);
 
+const geminiRoutes = require("./routes/gemini.routes");
+app.use("/gemini", geminiRoutes);
+
 // ❗ To handle errors. Routes that don't exist or errors that you handle in specific routes
 require("./error-handling")(app);
 // Set up custom error handling middleware:
