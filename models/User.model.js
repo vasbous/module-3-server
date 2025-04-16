@@ -40,8 +40,10 @@ const userSchema = new Schema(
       type: Date,
       // required: true,
     },
-
-    // Updated: renamed from diary_entry to diaries for clarity
+    welcome_message: {
+      type: Boolean,
+      default: false,
+    },
     diaries: {
       type: [Schema.Types.ObjectId],
       ref: "Diary",

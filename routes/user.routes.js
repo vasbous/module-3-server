@@ -98,6 +98,7 @@ router.patch("/update/:property/:userId", async (req, res, next) => {
     case "chat_history":
     case "google_connexion":
     case "goal_details":
+    case "welcome_message":
     case "signupCompleted":
       const updateProperty = {
         [property]: req.body[property],
