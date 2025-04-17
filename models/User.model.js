@@ -28,6 +28,15 @@ const userSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "Goal",
     },
+    profilepic: {
+      type: String,
+      default: "defaultpic",
+    },
+    chatbotPreference: {
+      type: String,
+      enum: ["chatbot1", "chatbot2"],
+      default: "chatbot1",
+    },
     level: {
       type: Number,
       default: 0,

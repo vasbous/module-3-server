@@ -23,12 +23,24 @@ router.post("/diary-feedback", checkApiKey, async (req, res) => {
     const { content, moodScore, previousEntries, currentUser } = req.body;
 
     // Generate prompt using the data from the request
-    const prompt = generateDiaryPrompt(
-      content,
-      moodScore,
-      previousEntries,
-      currentUser
-    );
+    let prompt;
+    // Check which chatbot persona to use based on user preference
+    if (currentUser.chatbotPreference === "chatbot2") {
+      prompt = generateDrillSergeantDiaryPrompt(
+        content,
+        moodScore,
+        previousEntries,
+        currentUser
+      );
+    } else {
+      // Default to the supportive coach prompt
+      prompt = generateSupportiveCoachDiaryPrompt(
+        content,
+        moodScore,
+        previousEntries,
+        currentUser
+      );
+    }
 
     const response = await axios.post(
       `${GEMINI_API_URL}/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
@@ -135,8 +147,21 @@ router.post("/chat", checkApiKey, async (req, res) => {
   try {
     const { userMessage, messages, currentUser } = req.body;
 
-    // Generate prompt for chat
-    const prompt = generateChatPrompt(userMessage, messages, currentUser);
+    // Generate prompt for chat based on user preference
+    let prompt;
+    if (currentUser.chatbotPreference === "chatbot2") {
+      prompt = generateDrillSergeantChatPrompt(
+        userMessage,
+        messages,
+        currentUser
+      );
+    } else {
+      prompt = generateSupportiveCoachChatPrompt(
+        userMessage,
+        messages,
+        currentUser
+      );
+    }
 
     const response = await axios.post(
       `${GEMINI_API_URL}/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
@@ -152,7 +177,7 @@ router.post("/chat", checkApiKey, async (req, res) => {
         ],
         generationConfig: {
           temperature: 0.7,
-          maxOutputTokens: 600,
+          maxOutputTokens: 500,
         },
       }
     );
@@ -179,8 +204,13 @@ router.post("/chat", checkApiKey, async (req, res) => {
   }
 });
 
-// Helper functions for generating prompts
-function generateDiaryPrompt(content, moodScore, previousEntries, currentUser) {
+// Helper functions for generating prompts - CHATBOT 1 (Supportive Coach)
+function generateSupportiveCoachDiaryPrompt(
+  content,
+  moodScore,
+  previousEntries,
+  currentUser
+) {
   // Extract goal details from user
   const goalDetails = currentUser.goal_details || {};
   const selectedGoal = goalDetails.selectedGoal || "No specific goal set";
@@ -237,6 +267,223 @@ Suggestion for Tomorrow: Offer a kind, practical suggestion to help the user con
 Keep the tone positive, human, and encouraging. Your feedback should be warm and supportive, aiming to empower the user while validating their experiences.
 
 Don't start with any preamble. Just provide the feedback in the three sections.
+`;
+}
+
+function generateSupportiveCoachChatPrompt(userMessage, messages, currentUser) {
+  // Get current date in user-friendly format
+  const today = new Date();
+  const formattedDate = today.toLocaleDateString();
+
+  // Extract goal details and task information from user
+  const goalDetails = currentUser?.goal_details || {};
+  const selectedGoal = goalDetails.selectedGoal || "No specific goal set";
+
+  // Extract tasks from plan
+  const planTasks = extractTasksFromPlan(currentUser);
+
+  // Format goal-related questions and answers
+  let questionsAndAnswers = "";
+  if (goalDetails.questions && goalDetails.questions.length > 0) {
+    questionsAndAnswers = goalDetails.questions
+      .map(
+        (q) =>
+          `Question: ${q.question || q.title}\nAnswer: ${
+            q.user_answer || "Not answered"
+          }`
+      )
+      .join("\n");
+  }
+
+  // Format conversation history (limit to last 10 exchanges)
+  const recentMessages = messages
+    .slice(-10)
+    .map((msg) => {
+      return `${msg.user ? "User: " + msg.user : ""}${
+        msg.bot ? "\nAssistant: " + msg.bot : ""
+      }`;
+    })
+    .join("\n\n");
+
+  return `
+You are a friendly, concise life coach assistant helping a user with their personal development journey.
+
+TODAY'S DATE: ${formattedDate}
+
+USER INFORMATION:
+
+Goal: ${selectedGoal}
+
+User's Tasks: ${planTasks}
+
+Goal-Related Questions & Answers: ${
+    questionsAndAnswers || "No specific questions answered yet"
+  }
+
+CONVERSATION CONTEXT:
+
+${recentMessages}
+
+USER'S CURRENT QUESTION: ${userMessage}
+
+Guidelines for your response:
+
+1. Keep answers concise - between one line and a short paragraph
+
+2. Be supportive, empathetic, and motivational
+
+3. Focus specifically on the user's goal and planned tasks when relevant
+
+4. If you need clarification to give a good answer, ask ONE brief follow-up question
+
+5. Don't introduce yourself or use unnecessary pleasantries - just answer directly
+
+6. If asked about tasks, provide specific implementation advice when possible
+
+7. Maintain a warm, personal coaching style
+
+8. Always refer to today's date as ${formattedDate} when discussing today's tasks
+
+Respond conversationally as if you're a supportive coach:
+`;
+}
+
+// Helper functions for generating prompts - CHATBOT 2 (Drill Sergeant)
+function generateDrillSergeantDiaryPrompt(
+  content,
+  moodScore,
+  previousEntries,
+  currentUser
+) {
+  // Extract goal details from user
+  const goalDetails = currentUser.goal_details || {};
+  const selectedGoal = goalDetails.selectedGoal || "No specific goal set";
+
+  // Format goal-related questions and answers
+  let questionsAndAnswers = "";
+  if (goalDetails.questions && goalDetails.questions.length > 0) {
+    questionsAndAnswers = goalDetails.questions
+      .map(
+        (q) =>
+          `Question: ${q.question || q.title}\nAnswer: ${
+            q.user_answer || "Not answered"
+          }`
+      )
+      .join("\n");
+  }
+
+  // Format previous entries
+  const lastEntries = previousEntries
+    .slice(0, 7)
+    .map(
+      (entry) =>
+        `Date: ${new Date(entry.createdAt).toLocaleDateString()}\nMood: ${
+          entry.mood_score
+        }/10\nContent: ${entry.content}`
+    )
+    .join("\n\n---\n\n");
+
+  return `
+You are a tough-as-nails marine drill sergeant providing feedback on a user's journal entry. You do NOT accept excuses. Your goal is to push the user to achieve their goals with relentless discipline and unwavering toughness.
+
+BELOW, you'll find the following information:
+Current Journal Entry: ${content}
+Mood Rating: ${moodScore}/10
+User Goal: ${selectedGoal}
+Relevant Questions & User's Answers: ${
+    questionsAndAnswers || "No specific questions answered yet"
+  }
+Last 7 Journal Entries: ${lastEntries || "No previous entries available"}
+
+Using the above context, provide feedback in three sections:
+Mood Reflection: If the mood is low, tell the user to suck it up and focus on what they CAN control. If the mood is high, warn them against complacency.
+What Went Well Today: Acknowledge any progress, but be brief. If there was NO progress, tear into them for wasting time.
+Suggestion for Tomorrow: Give a harsh, direct order for what they need to do tomorrow. No coddling.
+
+Example Quotes:
+* "Mood's a 2? Get over it! Now, what did you DO to fix it?!"
+* "You wrote a page? Good. Now write TWO tomorrow, maggot!"
+* "Nothing went well? What a sorry excuse! Get your lazy butt in gear and make something happen tomorrow!"
+* "Mood's a 9? Don't get cocky! One good day doesn't win the war!"
+
+Respond as a drill sergeant with NO PREAMBLE:
+`;
+}
+
+function generateDrillSergeantChatPrompt(userMessage, messages, currentUser) {
+  // Get current date in user-friendly format
+  const today = new Date();
+  const formattedDate = today.toLocaleDateString();
+
+  // Extract goal details and task information from user
+  const goalDetails = currentUser?.goal_details || {};
+  const selectedGoal = goalDetails.selectedGoal || "No specific goal set";
+
+  // Extract tasks from plan
+  const planTasks = extractTasksFromPlan(currentUser);
+
+  // Format goal-related questions and answers
+  let questionsAndAnswers = "";
+  if (goalDetails.questions && goalDetails.questions.length > 0) {
+    questionsAndAnswers = goalDetails.questions
+      .map(
+        (q) =>
+          `Question: ${q.question || q.title}\nAnswer: ${
+            q.user_answer || "Not answered"
+          }`
+      )
+      .join("\n");
+  }
+
+  // Format conversation history (limit to last 10 exchanges)
+  const recentMessages = messages
+    .slice(-10)
+    .map((msg) => {
+      return `${msg.user ? "User: " + msg.user : ""}${
+        msg.bot ? "\nAssistant: " + msg.bot : ""
+      }`;
+    })
+    .join("\n\n");
+
+  return `
+You are a tough-as-nails marine drill sergeant providing life coaching. You do NOT accept excuses. Your goal is to push the user to achieve their goals with relentless discipline and unwavering toughness.
+
+TODAY'S DATE: ${formattedDate}
+
+USER INFORMATION:
+Goal: ${selectedGoal}
+User's Tasks: ${planTasks}
+Goal-Related Questions & Answers: ${
+    questionsAndAnswers || "No specific questions answered yet"
+  }
+
+CONVERSATION CONTEXT:
+${recentMessages}
+
+USER'S CURRENT QUESTION: ${userMessage}
+
+Guidelines for your response:
+1. Keep answers concise and direct. No fluff.
+2. Be extremely strict, harsh, and borderline abusive if the user is slacking, making excuses, or failing to take action.
+3. Offer praise ONLY if the user has shown exceptional dedication and progress, and IMMEDIATELY follow it with a warning against getting lazy.
+4. Do NOT allow the user to dwell on negativity or self-doubt. Immediately redirect them to SOLUTIONS and ACTION.
+5. Do NOT engage in small talk or pleasantries.
+6. Use drill sergeant-style language and motivational phrases.
+7. Do NOT be afraid to be brutally honest.
+8. If the user complains, tell them to suck it up and drive on.
+9. If the user is looking for advice, give very direct and actionable tasks.
+10. If the user did everything right, give a short praise and a warning to not get complacent.
+11. Always refer to today's date as ${formattedDate} when discussing today's tasks.
+12. Don't respond in ALL CAPS for the whole message. Maybe just a few words or sentences.
+
+Example Quotes:
+* "Excuses are for losers! Now drop and give me twenty!"
+* "I don't want to hear your whining! Get your head in the game and MOVE!"
+* "Complacency is the enemy! You hit one goal? Good! Now aim for the next one, soldier!"
+* "Get your act together and start pushing! I don't want to see you slacking off!"
+* "You think this is hard? Life is harder! Now get back in there and fight for it!"
+
+Respond as a drill sergeant:
 `;
 }
 
@@ -318,84 +565,6 @@ Guidelines:
 9. YOU MUST ONLY SELECT TASKS FROM THE PROVIDED LIBRARY - do not create new tasks
 
 IMPORTANT: Return ONLY the JSON object with no additional explanation or text.
-`;
-}
-
-function generateChatPrompt(userMessage, messages, currentUser) {
-  // Get current date in user-friendly format
-  const today = new Date();
-  const formattedDate = today.toLocaleDateString();
-
-  // Extract goal details and task information from user
-  const goalDetails = currentUser?.goal_details || {};
-  const selectedGoal = goalDetails.selectedGoal || "No specific goal set";
-
-  // Extract tasks from plan
-  const planTasks = extractTasksFromPlan(currentUser);
-
-  // Format goal-related questions and answers
-  let questionsAndAnswers = "";
-  if (goalDetails.questions && goalDetails.questions.length > 0) {
-    questionsAndAnswers = goalDetails.questions
-      .map(
-        (q) =>
-          `Question: ${q.question || q.title}\nAnswer: ${
-            q.user_answer || "Not answered"
-          }`
-      )
-      .join("\n");
-  }
-
-  // Format conversation history (limit to last 10 exchanges)
-  const recentMessages = messages
-    .slice(-10)
-    .map((msg) => {
-      return `${msg.user ? "User: " + msg.user : ""}${
-        msg.bot ? "\nAssistant: " + msg.bot : ""
-      }`;
-    })
-    .join("\n\n");
-
-  return `
-You are a friendly, concise life coach assistant helping a user with their personal development journey.
-
-TODAY'S DATE: ${formattedDate}
-
-USER INFORMATION:
-
-Goal: ${selectedGoal}
-
-User's Tasks: ${planTasks}
-
-Goal-Related Questions & Answers: ${
-    questionsAndAnswers || "No specific questions answered yet"
-  }
-
-CONVERSATION CONTEXT:
-
-${recentMessages}
-
-USER'S CURRENT QUESTION: ${userMessage}
-
-Guidelines for your response:
-
-1. Keep answers concise - between one line and a short paragraph
-
-2. Be supportive, empathetic, and motivational
-
-3. Focus specifically on the user's goal and planned tasks when relevant
-
-4. If you need clarification to give a good answer, ask ONE brief follow-up question
-
-5. Don't introduce yourself or use unnecessary pleasantries - just answer directly
-
-6. If asked about tasks, provide specific implementation advice when possible
-
-7. Maintain a warm, personal coaching style
-
-8. Always refer to today's date as ${formattedDate} when discussing today's tasks
-
-Respond conversationally as if you're a supportive coach:
 `;
 }
 
